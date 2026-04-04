@@ -8,6 +8,7 @@ export type Region = {
   defaultCenter?: { lat: number; lng: number };
   defaultBounds?: { ne: { lat: number; lng: number }; sw: { lat: number; lng: number } };
   createdAt: Timestamp;
+  updatedAt?: Timestamp;
 };
 
 /** `spots` */
