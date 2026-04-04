@@ -58,6 +58,9 @@ npx firebase deploy --only hosting
 
 Rules / indexes / storage: `docs/FIREBASE_SETUP.md` và [`docs/RUNBOOK.md`](docs/RUNBOOK.md) (rollback, vận hành).
 
+- **Nghiệm thu go-live:** [`docs/GO_LIVE_CHECKLIST.md`](docs/GO_LIVE_CHECKLIST.md)
+- **Hiệu năng & load test (Lighthouse, k6):** [`docs/PERFORMANCE_AND_LOAD_TEST.md`](docs/PERFORMANCE_AND_LOAD_TEST.md)
+
 ## Cấu hình Firebase
 
 - **Hướng dẫn chi tiết từng bước:** [`docs/FIREBASE_SETUP.md`](docs/FIREBASE_SETUP.md) (điền `.env`, Anonymous auth, `admins/{uid}`, `firebase deploy`).

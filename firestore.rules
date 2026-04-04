@@ -63,7 +63,7 @@ service cloud.firestore {
 
       allow update: if isAdmin()
         && resource.data.status == 'pending'
-        && request.resource.data.status in ['approved', 'rejected']
+        && request.resource.data.status == 'approved'
         && request.resource.data.spotId == resource.data.spotId
         && request.resource.data.userId == resource.data.userId
         && request.resource.data.text == resource.data.text
@@ -71,8 +71,27 @@ service cloud.firestore {
         && request.resource.data.imageUrl == resource.data.imageUrl
         && request.resource.data.moderatedBy == request.auth.uid
         && request.resource.data.moderatedAt is timestamp
-        && (request.resource.data.status != 'rejected'
-            || (request.resource.data.rejectReason is string && request.resource.data.rejectReason.size() <= 500));
+        && (
+          request.resource.data.keys().hasOnly(['spotId', 'text', 'status', 'createdAt', 'userId', 'moderatedBy', 'moderatedAt'])
+          || request.resource.data.keys().hasOnly(['spotId', 'text', 'status', 'createdAt', 'userId', 'imageUrl', 'moderatedBy', 'moderatedAt'])
+        );
+
+      allow update: if isAdmin()
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'rejected'
+        && request.resource.data.spotId == resource.data.spotId
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.text == resource.data.text
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.imageUrl == resource.data.imageUrl
+        && request.resource.data.moderatedBy == request.auth.uid
+        && request.resource.data.moderatedAt is timestamp
+        && request.resource.data.rejectReason is string
+        && request.resource.data.rejectReason.size() <= 500
+        && (
+          request.resource.data.keys().hasOnly(['spotId', 'text', 'status', 'createdAt', 'userId', 'moderatedBy', 'moderatedAt', 'rejectReason'])
+          || request.resource.data.keys().hasOnly(['spotId', 'text', 'status', 'createdAt', 'userId', 'imageUrl', 'moderatedBy', 'moderatedAt', 'rejectReason'])
+        );
     }
   }
 }

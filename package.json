@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "emulators": "firebase emulators:start"
+    "emulators": "firebase emulators:start",
+    "k6:hosting-smoke": "k6 run scripts/k6/hosting-smoke.js"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.0.2",

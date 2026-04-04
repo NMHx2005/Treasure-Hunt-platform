@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   collection,
   doc,
@@ -17,10 +17,14 @@ import { getDb, getFirebaseAuth } from "@/lib/firebase";
 
 type Row = CheckIn & { id: string; spotName?: string };
 
+const REJECT_REASON_MAX = 500;
+
 export default function AdminModerationPage() {
   const db = useMemo(() => getDb(), []);
+  const spotNameCache = useRef<Map<string, string>>(new Map());
   const [rows, setRows] = useState<Row[]>([]);
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     const q = query(
@@ -33,10 +37,15 @@ export default function AdminModerationPage() {
         const base = snap.docs.map((d) => ({ id: d.id, ...(d.data() as CheckIn) }));
         const withNames = await Promise.all(
           base.map(async (r) => {
+            const cached = spotNameCache.current.get(r.spotId);
+            if (cached !== undefined) {
+              return { ...r, spotName: cached };
+            }
             const spotSnap = await getDoc(doc(db, "spots", r.spotId));
             const spotName = spotSnap.exists()
               ? (spotSnap.data() as { name: string }).name
               : r.spotId;
+            spotNameCache.current.set(r.spotId, spotName);
             return { ...r, spotName };
           }),
         );
@@ -48,24 +57,37 @@ export default function AdminModerationPage() {
 
   async function approve(id: string) {
     const uid = getFirebaseAuth().currentUser?.uid;
-    if (!uid) return;
-    await updateDoc(doc(db, "checkIns", id), {
-      status: "approved",
-      moderatedBy: uid,
-      moderatedAt: serverTimestamp(),
-    });
+    if (!uid || busyId) return;
+    setBusyId(id);
+    try {
+      await updateDoc(doc(db, "checkIns", id), {
+        status: "approved",
+        moderatedBy: uid,
+        moderatedAt: serverTimestamp(),
+      });
+    } finally {
+      setBusyId(null);
+    }
   }
 
   async function reject(id: string) {
     const uid = getFirebaseAuth().currentUser?.uid;
-    if (!uid) return;
-    const reason = rejectReason[id]?.trim() ?? "";
-    await updateDoc(doc(db, "checkIns", id), {
-      status: "rejected",
-      moderatedBy: uid,
-      moderatedAt: serverTimestamp(),
-      rejectReason: reason || "—",
-    });
+    if (!uid || busyId) return;
+    let reason = rejectReason[id]?.trim() ?? "";
+    if (reason.length > REJECT_REASON_MAX) {
+      reason = reason.slice(0, REJECT_REASON_MAX);
+    }
+    setBusyId(id);
+    try {
+      await updateDoc(doc(db, "checkIns", id), {
+        status: "rejected",
+        moderatedBy: uid,
+        moderatedAt: serverTimestamp(),
+        rejectReason: reason || "—",
+      });
+    } finally {
+      setBusyId(null);
+    }
   }
 
   return (
@@ -89,21 +111,29 @@ export default function AdminModerationPage() {
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
-                className="rounded bg-emerald-700 px-3 py-1.5 text-sm text-white"
+                disabled={busyId !== null}
+                className="rounded bg-emerald-700 px-3 py-1.5 text-sm text-white disabled:opacity-50"
                 onClick={() => void approve(r.id)}
               >
-                Approve
+                {busyId === r.id ? "Đang xử lý…" : "Approve"}
               </button>
               <input
                 type="text"
                 placeholder="Lý do từ chối (tuỳ chọn)"
-                className="min-w-[12rem] flex-1 rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-600 dark:bg-zinc-900"
+                maxLength={REJECT_REASON_MAX}
+                className="min-w-48 flex-1 rounded border border-zinc-300 px-2 py-1 text-sm dark:border-zinc-600 dark:bg-zinc-900"
                 value={rejectReason[r.id] ?? ""}
-                onChange={(e) => setRejectReason((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                onChange={(e) =>
+                  setRejectReason((prev) => ({ ...prev, [r.id]: e.target.value.slice(0, REJECT_REASON_MAX) }))
+                }
               />
+              <span className="self-center text-xs text-zinc-400">
+                {(rejectReason[r.id] ?? "").length}/{REJECT_REASON_MAX}
+              </span>
               <button
                 type="button"
-                className="rounded bg-red-700 px-3 py-1.5 text-sm text-white"
+                disabled={busyId !== null}
+                className="rounded bg-red-700 px-3 py-1.5 text-sm text-white disabled:opacity-50"
                 onClick={() => void reject(r.id)}
               >
                 Reject

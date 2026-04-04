@@ -2,6 +2,8 @@
 
 Một trang tham chiếu nhanh khi sự kiện / production gặp sự cố. Đối chiếu `planning/06-devops-operations.md`.
 
+**Tài liệu liên quan:** [`GO_LIVE_CHECKLIST.md`](GO_LIVE_CHECKLIST.md) (nghiệm thu), [`PERFORMANCE_AND_LOAD_TEST.md`](PERFORMANCE_AND_LOAD_TEST.md) (Lighthouse, k6, Usage).
+
 **Deploy:** thủ công từ máy dev (`firebase deploy`), không dùng GitHub Actions trong repo này.
 
 ---
@@ -78,12 +80,14 @@ Trước deploy nên: `npm run lint` và `npm run build` để bắt lỗi sớm
 
 ---
 
-## Hiệu năng & Lighthouse (NF-09 / §3.5)
+## Hiệu năng & Lighthouse (NF-09 / mục 3.5 tài liệu dự án)
 
 Sau mỗi release production nên:
 
-1. Chạy **Lighthouse (mobile)** trên URL thật (Chrome DevTools hoặc PageSpeed Insights).
+1. Chạy **Lighthouse (mobile)** trên URL thật (Chrome DevTools hoặc PageSpeed Insights). Chi tiết và k6: xem [`PERFORMANCE_AND_LOAD_TEST.md`](PERFORMANCE_AND_LOAD_TEST.md).
 2. Ghi lại **LCP, INP, CLS** vào bảng dưới (cập nhật tay).
+
+**Load test nhanh (k6):** cài [k6](https://k6.io/docs/get-started/installation/), rồi `BASE_URL=https://<project>.web.app npm run k6:hosting-smoke` (script trong `package.json`; file `scripts/k6/hosting-smoke.js`).
 
 | Ngày | URL | LCP | INP | CLS | Ghi chú |
 |------|-----|-----|-----|-----|--------|
@@ -101,5 +105,5 @@ Sau mỗi release production nên:
 ## Sau sự kiện (cải tiến)
 
 - Thu thập peak concurrent, reads/writes Firestore, egress Storage.
-- Cân nhắc load test k6 cho lần sau; tùy chọn bật CI (GitHub Actions) nếu team muốn deploy tự động.
+- Cân nhắc load test k6 (`npm run k6:hosting-smoke` với `BASE_URL` staging/production); tùy chọn bật CI (GitHub Actions) nếu team muốn deploy tự động.
 - Cập nhật bảng Lighthouse và runbook này với số liệu thực tế.
