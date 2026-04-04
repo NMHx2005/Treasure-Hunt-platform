@@ -69,6 +69,7 @@ npx firebase deploy --only firestore:rules,firestore:indexes,storage
 
 - Push `main` → workflow **CI & Deploy Hosting** (lint → build → deploy).
 - **Secrets** không được in ra log; nếu job fail, xem tab Actions → bước lỗi (không mở raw secret).
+- Lỗi **`Failed to authenticate, have you run firebase login?`** trên runner: **chưa có** hoặc **sai** secret `FIREBASE_TOKEN`. Tạo token: `npx firebase login:ci` trên máy local → thêm secret `FIREBASE_TOKEN` trong GitHub (Repository secrets, không phải Environment nếu workflow không gắn environment). Chi tiết từng bước: `README.md` mục GitHub Actions.
 
 ### Rollback nhanh
 

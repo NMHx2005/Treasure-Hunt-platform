@@ -59,6 +59,18 @@ jobs:
       - run: npm ci
       - name: Enable Firebase Web Frameworks (Next.js)
         run: npx firebase experiments:enable webframeworks
+      - name: Kiểm tra FIREBASE_TOKEN (bắt buộc cho CI)
+        run: |
+          if [ -z "$FIREBASE_TOKEN" ]; then
+            echo "::error::Thiếu GitHub secret FIREBASE_TOKEN — deploy không thể xác thực."
+            echo "Cách sửa: trên máy đã firebase login, chạy: npx firebase login:ci"
+            echo "Sao chép token, vào GitHub repo → Settings → Secrets and variables → Actions → New repository secret"
+            echo "Tên: FIREBASE_TOKEN | Giá trị: dán token (một dòng)."
+            exit 1
+          fi
+          echo "FIREBASE_TOKEN đã có (không in giá trị)."
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
       - name: Deploy to Firebase Hosting
         run: npx firebase deploy --only hosting --non-interactive
         env:
