@@ -47,6 +47,16 @@ Tuỳ chọn — test Firestore/Storage rules local (CLI đã có qua `firebase-
 npm run emulators
 ```
 
+## GitHub Actions (CI/CD)
+
+- **Workflow:** [`.github/workflows/ci-deploy.yml`](.github/workflows/ci-deploy.yml) — mọi **pull request** và **push** chạy `lint` + `build`; chỉ **push lên `main`** mới **deploy Firebase Hosting** (Web Frameworks + Next.js).
+- **Preview PR:** [`.github/workflows/hosting-preview.yml`](.github/workflows/hosting-preview.yml) — deploy channel `pr-<số>` (7 ngày) cho PR **trong cùng repo** (không chạy trên fork).
+- **Secrets** (Repository → *Settings* → *Secrets and variables* → *Actions*), **không** commit vào git:
+  - `FIREBASE_TOKEN` — tạo bằng `npx firebase login:ci` (một lần trên máy tin cậy), dán token vào secret.
+  - Cùng bộ `NEXT_PUBLIC_*` như `.env.example` (Firebase + Google Maps) để bản build trên CI có đủ cấu hình client.
+- Deploy fail nếu thiếu secret — xem log tab **Actions** (GitHub không in giá trị secret).
+- **Runbook** vận hành, rollback, Lighthouse: [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
+
 ## Cấu hình Firebase
 
 - **Hướng dẫn chi tiết từng bước:** [`docs/FIREBASE_SETUP.md`](docs/FIREBASE_SETUP.md) (điền `.env`, Anonymous auth, `admins/{uid}`, `firebase deploy`).
