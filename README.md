@@ -47,20 +47,16 @@ Tuỳ chọn — test Firestore/Storage rules local (CLI đã có qua `firebase-
 npm run emulators
 ```
 
-## GitHub Actions (CI/CD)
+## Deploy lên Firebase Hosting (thủ công)
 
-- **Workflow:** [`.github/workflows/ci-deploy.yml`](.github/workflows/ci-deploy.yml) — mọi **pull request** và **push** chạy `lint` + `build`; chỉ **push lên `main`** mới **deploy Firebase Hosting** (Web Frameworks + Next.js).
-- **Preview PR:** [`.github/workflows/hosting-preview.yml`](.github/workflows/hosting-preview.yml) — deploy channel `pr-<số>` (7 ngày) cho PR **trong cùng repo** (không chạy trên fork).
-- **Secrets** (Repository → *Settings* → *Secrets and variables* → *Actions* → *New repository secret*), **không** commit vào git:
-  - **`FIREBASE_TOKEN`** (bắt buộc để deploy từ CI — nếu thiếu sẽ lỗi *Failed to authenticate*):
-    1. Trên máy đã đăng nhập Firebase (`firebase login`), chạy: `npx firebase login:ci`
-    2. Mở link, chọn tài khoản Google có quyền project Firebase
-    3. Sao chép **token** in ra terminal (một chuỗi dài)
-    4. GitHub → repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret** → Name: `FIREBASE_TOKEN` → Secret: dán token → **Add secret**
-    5. Push lại `main` hoặc **Re-run jobs** trong tab Actions
-  - Cùng bộ `NEXT_PUBLIC_*` như `.env.example` (Firebase + Google Maps) để bản build trên CI có đủ cấu hình client.
-- Deploy fail nếu thiếu secret — xem log tab **Actions** (GitHub không in giá trị secret).
-- **Runbook** vận hành, rollback, Lighthouse: [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
+Không dùng GitHub Actions — deploy từ máy đã `firebase login` và `.env` đầy đủ:
+
+```bash
+npx firebase experiments:enable webframeworks   # một lần trên máy
+npx firebase deploy --only hosting
+```
+
+Rules / indexes / storage: `docs/FIREBASE_SETUP.md` và [`docs/RUNBOOK.md`](docs/RUNBOOK.md) (rollback, vận hành).
 
 ## Cấu hình Firebase
 
