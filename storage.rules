@@ -1,0 +1,32 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function adminUid() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+
+    function checkIn(checkInId) {
+      return firestore.get(/databases/(default)/documents/checkIns/$(checkInId));
+    }
+
+    match /spots/{spotId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if adminUid()
+        && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    match /checkIns/{checkInId}/{fileName} {
+      allow read: if checkIn(checkInId).data.status == 'approved'
+        || adminUid()
+        || (request.auth != null && checkIn(checkInId).data.userId == request.auth.uid);
+
+      allow create: if request.auth != null
+        && request.resource.size < 5 * 1024 * 1024
+        && fileName == 'photo.jpg'
+        && checkIn(checkInId).data.userId == request.auth.uid
+        && checkIn(checkInId).data.status == 'pending';
+    }
+  }
+}

@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function spotShape() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['regionId', 'name', 'lat', 'lng', 'createdAt'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 200
+        && d.regionId is string
+        && d.lat is number && d.lat >= -90 && d.lat <= 90
+        && d.lng is number && d.lng >= -180 && d.lng <= 180
+        && d.createdAt is timestamp
+        && (!('imageUrl' in d) || d.imageUrl == null || d.imageUrl is string)
+        && (!('galleryUrls' in d) || d.galleryUrls is list)
+        && (!('updatedAt' in d) || d.updatedAt is timestamp);
+    }
+
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /regions/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /spots/{spotId} {
+      allow read: if true;
+      allow create: if isAdmin() && spotShape();
+      allow update: if isAdmin() && spotShape();
+      allow delete: if isAdmin();
+    }
+
+    match /checkIns/{checkInId} {
+      allow read: if resource.data.status == 'approved' || isAdmin();
+
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['spotId', 'text', 'status', 'createdAt', 'userId'])
+        && request.resource.data.status == 'pending'
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.spotId is string
+        && exists(/databases/$(database)/documents/spots/$(request.resource.data.spotId))
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 2000
+        && request.resource.data.createdAt is timestamp;
+
+      allow update: if request.auth != null
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'pending'
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.spotId == resource.data.spotId
+        && request.resource.data.text == resource.data.text
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.imageUrl is string
+        && (!('imageUrl' in resource.data) || resource.data.imageUrl == null);
+
+      allow update: if isAdmin()
+        && resource.data.status == 'pending'
+        && request.resource.data.status in ['approved', 'rejected']
+        && request.resource.data.spotId == resource.data.spotId
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.text == resource.data.text
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.imageUrl == resource.data.imageUrl
+        && request.resource.data.moderatedBy == request.auth.uid
+        && request.resource.data.moderatedAt is timestamp
+        && (request.resource.data.status != 'rejected'
+            || (request.resource.data.rejectReason is string && request.resource.data.rejectReason.size() <= 500));
+    }
+  }
+}

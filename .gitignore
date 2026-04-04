@@ -30,8 +30,18 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — do not commit secrets (commit .env.example only)
+.env
+.env.*
+!.env.example
+
+# firebase
+.firebase
+
+# logs
+*.log
+firestore-debug.log
+ui-debug.log
 
 # vercel
 .vercel
