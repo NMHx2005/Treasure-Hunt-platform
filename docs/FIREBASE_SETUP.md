@@ -57,6 +57,17 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIza...your-key...
 
 6. Khởi động lại `npm run dev` sau khi sửa `.env`.
 
+#### Deploy Hosting mà map báo “Thiếu NEXT_PUBLIC_GOOGLE_MAPS_API_KEY”
+
+Các biến `NEXT_PUBLIC_*` được **ghép vào bundle lúc `next build`**. Trang production **không đọc** file `.env` trên máy người xem — nếu bản build thiếu key thì Hosting vẫn báo thiếu.
+
+**Cách xử lý:**
+
+1. **Luôn deploy từ máy có file `.env` đầy đủ** trong **thư mục gốc repo** (cùng cấp `package.json`), rồi chạy `firebase deploy` (hoặc `npx firebase deploy --only hosting`). Repo đã cấu hình `next.config.ts` để nạp `.env` / `.env.production` sớm khi build; sau khi cập nhật code, chạy lại deploy.
+2. **Firebase CLI** (luồng Next) còn có thể merge file **`.env.<PROJECT_ID>`** (ví dụ `.env.treasure-hunt-staging-7e873` nếu trùng Project ID trong `.firebaserc`) vào môi trường khi build — có thể tạo file này **copy nội dung `NEXT_PUBLIC_*` từ `.env`** nếu build vẫn thiếu biến.
+3. Trước khi deploy, kiểm tra local: `npm run build` xong tìm trong thư mục `.next` chuỗi `NEXT_PUBLIC_GOOGLE` hoặc mở bản production (`npm run start`) xem map có lên không.
+4. **Không** kỳ vọng máy khác / CI pull git rồi deploy **tự có** `.env` — file đó thường **gitignore**; cần copy `.env` hoặc đặt biến môi trường trên máy build / trong cấu hình CI.
+
 ### 1.5 Tại sao phải vào Google Cloud? Sao không “tạo project mới”? Billing bị lẫn?
 
 **Firebase và Google Cloud dùng chung một project**
